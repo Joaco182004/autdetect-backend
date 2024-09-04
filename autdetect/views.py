@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework import viewsets
 from .serializer import PsychologistSerializer
 from .models import Psychologists,UserProfile
+from .serializer import UserProfileSerializer
 from .serializer import InfantPatientSerializer
 from .models import InfantPatient
 from .serializer import QuestionnaireSerializer
@@ -174,6 +175,12 @@ class QuestionnaireView(viewsets.ModelViewSet):
     serializer_class = QuestionnaireSerializer
     queryset = Questionnaire.objects.all()
 
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+class UserProfileView(viewsets.ModelViewSet):
+    serializer_class = UserProfileSerializer
+    queryset = UserProfile.objects.all()
+
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -271,5 +278,22 @@ def change_email_verification(request):
     email_change = request.data.get('email_change', '')
     
     change_email(existing_user,email_change)
+
+    return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def change_username(request):
+    username = request.data.get('email', '')
+    existing_user = User.objects.filter(username=username).first()
+    email_change = request.data.get('email_change', '')
+    if existing_user:
+        existing_user.username = email_change
+        existing_user.email = email_change
+        existing_user.save()
+        psychology = Psychologists.objects.filter(email=username).first()
+        if psychology:
+            psychology.email = email_change
+            psychology.save()
+        
 
     return Response(status=status.HTTP_200_OK)

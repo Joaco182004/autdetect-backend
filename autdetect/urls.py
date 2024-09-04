@@ -6,6 +6,7 @@ router = routers.DefaultRouter()
 router.register(r'psychologist',views.PsychologistView, 'psychologist')
 router.register(r'infantpatient',views.InfantPatientView, 'infantpatient')
 router.register(r'questionnaire',views.QuestionnaireView, 'questionnaire')
+router.register(r'userprofile',views.UserProfileView, 'userprofile')
 urlpatterns = [
     path('api/v1/',include(router.urls)),
     path('docs/',include_docs_urls(title = "Autdetect API")),

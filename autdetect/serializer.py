@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Psychologists
 from .models import InfantPatient
 from .models import Questionnaire
+from .models import UserProfile
 from django.contrib.auth.models import User
 
 class PsychologistSerializer(serializers.ModelSerializer):
@@ -12,6 +13,11 @@ class PsychologistSerializer(serializers.ModelSerializer):
 class InfantPatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = InfantPatient
+        fields = '__all__'
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
         fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
