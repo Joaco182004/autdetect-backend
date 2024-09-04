@@ -8,8 +8,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     activation_key = models.CharField(max_length=40, blank=True)
     key_expires = models.DateTimeField(default=timezone.now() + timedelta(minutes=15))
-
-
+    code_change = models.CharField(max_length=6, blank=True,default=0)
     def __str__(self):
         return self.user.username
 
@@ -19,7 +18,7 @@ class UserProfile(models.Model):
 class Psychologists(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=200)
-    dni = models.CharField(max_length=8)
+    dni = models.CharField(max_length=8, unique=True)
     tuition_number = models.CharField(max_length=20)
     email = models.EmailField()
 

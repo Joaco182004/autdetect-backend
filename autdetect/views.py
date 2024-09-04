@@ -21,6 +21,7 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 from django.db.models import Count, Case, When, IntegerField
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
+import random
 
 from django.conf import settings
 
@@ -92,7 +93,6 @@ def activate_account(request, activation_key):
         return HttpResponse('Cuenta activada con éxito. Puedes iniciar sesión.')
     except UserProfile.DoesNotExist:
         return HttpResponse('Enlace inválido.', status=400)
-
 
 @api_view(['POST'])
 def login(request):
@@ -222,3 +222,54 @@ def patients_by_gender(request):
     )
     
     return Response(gender_data)
+
+def change_email(user,email_change):
+    print(user)
+    user_profile = UserProfile.objects.filter(user=user).first()
+
+    verification_code = random.randint(100000, 999999)
+
+    if user_profile:
+        user_profile.code_change = verification_code
+        user_profile.save()
+    
+    subject = "AutDetect - Cambio de Correo Electrónico 📧"
+    html_message = f"""
+    <html>
+    <head></head>
+    <body>
+    <p>Hola, {email_change}</p>
+    <p>Hemos recibido una solicitud para cambiar la dirección de correo electrónico asociada a tu cuenta en <strong>AutDetect</strong>. Si has solicitado este cambio, por favor confirma tu nueva dirección de correo electrónico utilizando el código de verificación que se muestra a continuación.</p>
+    <p><strong>Código de verificación: {verification_code}</strong></p>
+    <p>Si no solicitaste este cambio, por favor ignora este correo o contacta a nuestro equipo de soporte.</p>
+    <p>Gracias por formar parte de <strong>AutDetect</strong> y por tu dedicación en la detección temprana del autismo. Tu compromiso con esta causa es muy valioso para nosotros. 🌟</p>
+    <p>Atentamente,<br>
+    <strong>AutDetect</strong><br>
+    [autdetect@gmail.com] ✉️</p>
+    </body>
+    </html>
+    """
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [email_change]
+
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=html_message,
+            from_email=from_email,
+            to=recipient_list,
+        )
+        email.content_subtype = 'html'  # Importante para enviar HTML
+        email.send()
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+
+@api_view(['POST'])
+def change_email_verification(request):
+    username = request.data.get('email', '')
+    existing_user = User.objects.filter(username=username).first()
+    email_change = request.data.get('email_change', '')
+    
+    change_email(existing_user,email_change)
+
+    return Response(status=status.HTTP_200_OK)
