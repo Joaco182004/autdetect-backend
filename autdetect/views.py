@@ -22,6 +22,13 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 from django.db.models import Count, Case, When, IntegerField
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+import os
+
 import random
 
 from django.conf import settings
@@ -371,4 +378,46 @@ def validate_code(request):
         else:
             return Response("El código no corresponde al código enviado.", status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+def generar_reporte_pdf(request):
+    # Crear el objeto HttpResponse con el contenido del PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="reporte.pdf"'
 
+    # Crear un objeto canvas de ReportLab
+    c = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+
+    # Ruta del logo (asegúrate de colocar la ruta correcta)
+    logo_path = os.path.join('crudautdetect/static/imgs/logoautdetect.png')
+
+    # Agregar el logo (en la esquina superior derecha)
+    c.drawImage(logo_path, width - 2 * inch, height - inch - 20, width=1.5 * inch, height=1.5 * inch)
+
+    # Título del reporte
+    c.setFont("Helvetica-Bold", 20)
+    c.drawString(100, height - 100, "Reporte de Ejemplo")
+
+    # Subtítulo
+    c.setFont("Helvetica", 12)
+    c.drawString(100, height - 120, "Este es un reporte generado en PDF con Django y ReportLab")
+
+    # Línea decorativa
+    c.setStrokeColor(colors.blue)
+    c.setLineWidth(2)
+    c.line(100, height - 130, width - 100, height - 130)
+
+    # Texto del cuerpo
+    c.setFont("Helvetica", 10)
+    texto = (
+        "Este es un ejemplo de cómo generar un reporte PDF en Django "
+        "usando la librería ReportLab. El reporte incluye un logo en "
+        "la esquina superior derecha y este texto de ejemplo."
+    )
+    c.drawString(100, height - 150, texto)
+
+    # Finalizar el PDF
+    c.showPage()
+    c.save()
+
+    return response
