@@ -28,18 +28,19 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 import os
-
 import random
-
 from django.conf import settings
-
 # Create your views here.
 from django.shortcuts import render, redirect
-
-
-
 from django.utils.crypto import get_random_string
 from django.urls import reverse
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+
 
 def enviar_correo(user):
     activation_key = get_random_string(40)
@@ -394,29 +395,76 @@ def generar_reporte_pdf(request):
     # Agregar el logo (en la esquina superior derecha)
     c.drawImage(logo_path, width - 2 * inch, height - inch - 20, width=1.5 * inch, height=1.5 * inch)
 
-    # Título del reporte
-    c.setFont("Helvetica-Bold", 20)
-    c.drawString(100, height - 100, "Reporte de Ejemplo")
 
-    # Subtítulo
     c.setFont("Helvetica", 12)
-    c.drawString(100, height - 120, "Este es un reporte generado en PDF con Django y ReportLab")
+    c.drawString(50, height - 40, "AutDetect")
+    c.drawString(50, height - 60, "Contacto: autdetect@gmail.com")
+    # Título del reporte
 
-    # Línea decorativa
-    c.setStrokeColor(colors.blue)
-    c.setLineWidth(2)
-    c.line(100, height - 130, width - 100, height - 130)
+    # Añadir título
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 100, "Reporte de detección temprana del Trastorno Espectro Autista")
 
-    # Texto del cuerpo
+    # Añadir información de contacto
+    
+
+    # Subtítulo 1
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, height - 130, "1. Respuestas del cuestionario de comportamiento")
+
+    # Preguntas
+    questions = [
+        "1. Si señalas algo en la habitación, como un juguete o un animal, ¿tu hijo(a) lo mira?",
+        "2. ¿Alguna vez has pensado que tu hijo(a) podría ser sordo(a)?",
+        "3. ¿Tu hijo(a) juega a hacer cosas como beber de una taza de juguete, hablar por teléfono, o darle de comer a una muñeca o peluche?",
+        "4. ¿Hace tu hijo(a) movimientos extraños con los dedos cerca de sus ojos, o junta sus manos o pies de manera inusual?",
+        "5. ¿Tu hijo(a) señala con el dedo o la mano cuando quiere algo o necesita ayuda, como un juguete o comida que no puede alcanzar?",
+        "6. ¿Alguna vez tu hijo(a) señala algo solo para mostrarte, como un avión en el cielo o un animal?",
+        "7. ¿Tu hijo(a) muestra interés en otros niños, como mirarlos, sonreírles o tratar de jugar con ellos?",
+        "8. ¿Tu hijo(a) te muestra cosas para llamar tu atención, no porque necesite ayuda, sino solo para compartirlas contigo, como una flor o un juguete?",
+        "9. ¿Responde tu hijo(a) cuando lo(a) llamas por su nombre, como volteándose, hablándote o dejando de hacer lo que estaba haciendo?",
+        "10. ¿Cuando le sonríes a tu hijo(a), él o ella te sonríe de vuelta?",
+        "11. ¿Tu hijo(a) es sensible a ciertos ruidos, como la aspiradora, música alta, o el sonido de una moto?",
+        "12. ¿Te mira tu hijo(a) a los ojos cuando le hablas, juegas con él/ella, o lo(a) vistes?",
+        "13. ¿Usa tu hijo(a) gestos como decir adiós con la mano, aplaudir, o imitar algún sonido gracioso que haces?",
+        "14. Si te giras a ver algo, ¿tu hijo(a) trata de mirar hacia lo que estás mirando?",
+        "15. ¿Tu hijo(a) intenta que le prestes atención, por ejemplo, diciendo “mira” o 'mírame'?",
+        "16. ¿Entiende tu hijo(a) lo que le dices que haga, como “pon el libro en la silla” o “tráeme la manta” sin necesidad de gestos?",
+        "17. ¿A tu hijo(a) le cuesta cambiar de rutina, como cambiar de horario en la escuela, salir de vacaciones, o tomar un camino diferente?",
+        "18. ¿Tu hijo(a) tiene dificultades para aceptar diferentes texturas o colores de alimentos?",
+        "19. ¿Tu hijo(a) tiene un interés exagerado por un tipo específico de dibujo, juego o tema?",
+        "20. ¿Tu hijo(a) repite casi siempre la última palabra que escucha de una frase dicha por otra persona?",
+        "21. ¿Tu hijo(a) te jala de la mano para que hagas cosas por él/ella, como abrir una puerta, coger un objeto, o jugar?",
+        "22. Si personas desconocidas saludan a tu hijo(a), ¿él/ella las mira o responde al saludo?",
+        "23. ¿Tu hijo(a) puede jugar con niños que no conoce cuando está en el parque?",
+        "24. ¿Tu hijo(a) se integra al grupo de niños cuando va a una fiesta infantil?",
+    ]
+
+    y_position = height - 160
     c.setFont("Helvetica", 10)
-    texto = (
-        "Este es un ejemplo de cómo generar un reporte PDF en Django "
-        "usando la librería ReportLab. El reporte incluye un logo en "
-        "la esquina superior derecha y este texto de ejemplo."
-    )
-    c.drawString(100, height - 150, texto)
+    for question in questions:
+        c.drawString(70, y_position, question)
+        y_position -= 20
 
-    # Finalizar el PDF
+    # Subtítulo 2
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(100, y_position - 20, "2. Resultados de la evaluación")
+
+    # Datos de la tabla
+    table_data = [
+        ["Nombre", "Apellido", "Fecha de nacimiento", "Fecha de evaluación", "Resultado", "Probabilidad"],
+        ["Juan", "Pérez", "01/01/2010", "15/08/2024", "Positivo", "85%"],
+        ["Ana", "García", "05/05/2012", "15/08/2024", "Negativo", "10%"],
+    ]
+
+    # Calcular las posiciones
+    table_y_position = y_position - 60
+    c.setFont("Helvetica-Bold", 12)
+    for i, row in enumerate(table_data):
+        for j, cell in enumerate(row):
+            c.drawString(100 + j * 90, table_y_position, cell)
+        table_y_position -= 20
+
     c.showPage()
     c.save()
 
