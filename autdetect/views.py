@@ -294,6 +294,14 @@ def change_username(request):
         if psychology:
             psychology.email = email_change
             psychology.save()
-        
+    return Response(status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def change_password(request):
+    username = request.data.get('email', '')
+    existing_user = User.objects.filter(username=username).first()
+    password = request.data.get('password', '')
+    if existing_user:
+        existing_user.set_password(password)
+        existing_user.save()
     return Response(status=status.HTTP_200_OK)

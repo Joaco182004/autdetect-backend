@@ -25,4 +25,5 @@ urlpatterns = [
     path('activate/<str:activation_key>/', views.activate_account, name='activate_account'),
     path('changeemail/', views.change_email_verification, name='change_email_verification'),
     path('changeusername/', views.change_username, name='changeusername'),
+    path('changepassword/', views.change_password, name='changepassword'),
 ]
