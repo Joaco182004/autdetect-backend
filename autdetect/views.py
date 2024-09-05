@@ -35,7 +35,6 @@ from django.utils.crypto import get_random_string
 from django.urls import reverse
 
 def enviar_correo(user):
-    print(user)
     activation_key = get_random_string(40)
     user_profile = UserProfile.objects.create(user=user, activation_key=activation_key)
     
@@ -231,7 +230,6 @@ def patients_by_gender(request):
     return Response(gender_data)
 
 def change_email(user,email_change):
-    print(user)
     user_profile = UserProfile.objects.filter(user=user).first()
 
     verification_code = random.randint(100000, 999999)
@@ -282,6 +280,8 @@ def change_email_verification(request):
     return Response(status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def change_username(request):
     username = request.data.get('email', '')
     existing_user = User.objects.filter(username=username).first()
@@ -305,3 +305,70 @@ def change_password(request):
         existing_user.set_password(password)
         existing_user.save()
     return Response(status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def change_password_email(request):
+    username = request.data.get('email', '')
+    
+    existing_user = User.objects.filter(username=username).first()
+    
+    user_profile = UserProfile.objects.filter(user=existing_user).first()
+
+    verification_code = random.randint(100000, 999999)
+
+    if user_profile:
+        user_profile.code_change = verification_code
+        user_profile.save()
+    else:
+        return Response("El correo ingresado no se encuentra registrado.", status=status.HTTP_400_BAD_REQUEST)
+    
+    subject = "AutDetect - Cambio de Contraseña 🔑"
+    html_message = f"""
+    <html>
+    <head></head>
+    <body>
+    <p>Hola, {username}</p>
+    <p>Hemos recibido una solicitud para cambiar la contraseña asociada a tu cuenta en <strong>AutDetect</strong>. Si has solicitado este cambio, por favor confirma tu nueva contraseña utilizando el código de verificación que se muestra a continuación.</p>
+    <p><strong>Código de verificación: {verification_code}</strong></p>
+    <p>Si no solicitaste este cambio, por favor ignora este correo o contacta a nuestro equipo de soporte.</p>
+    <p>Gracias por formar parte de <strong>AutDetect</strong> y por tu dedicación en la detección temprana del autismo. Tu compromiso con esta causa es muy valioso para nosotros. 🌟</p>
+    <p>Atentamente,<br>
+    <strong>AutDetect</strong><br>
+    [autdetect@gmail.com] ✉️</p>
+    </body>
+    </html>
+    """
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [username]
+
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=html_message,
+            from_email=from_email,
+            to=recipient_list,
+        )
+        email.content_subtype = 'html'  # Importante para enviar HTML
+        email.send()
+        return Response(status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+
+
+@api_view(['POST'])
+def validate_code(request):
+    username = request.data.get('email', '')
+    code = request.data.get('code', '')
+    
+    existing_user = User.objects.filter(username=username).first()
+
+    if existing_user:
+        print(existing_user)
+        user_profile = UserProfile.objects.filter(user=existing_user).first()
+        print(user_profile)
+        if(user_profile.code_change == code):
+            return Response({"success": True}, status=status.HTTP_200_OK)
+        else:
+            return Response("El código no corresponde al código enviado.", status=status.HTTP_400_BAD_REQUEST)
+
+
