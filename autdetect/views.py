@@ -1,46 +1,41 @@
-from django.utils import timezone
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
-from rest_framework import viewsets
-from .serializer import PsychologistSerializer
-from .models import Psychologists,UserProfile
-from .serializer import UserProfileSerializer
-from .serializer import InfantPatientSerializer
-from .models import InfantPatient
-from .serializer import QuestionnaireSerializer
-from .models import Questionnaire
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .serializer import UserSerializer
+# Django Imports
+from io import BytesIO
+from django.conf import settings
 from django.contrib.auth.models import User
-from rest_framework import status
+from django.core.mail import EmailMessage, send_mail
+from django.db.models import Case, Count, IntegerField, When
+from django.db.models.functions import ExtractMonth, ExtractYear
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone, crypto
+from django.utils.crypto import get_random_string
+
+# Django REST Framework Imports
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import authentication_classes,permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
-from django.db.models.functions import ExtractMonth, ExtractYear
-from django.db.models import Count, Case, When, IntegerField
-from django.core.mail import send_mail
-from django.core.mail import EmailMessage
-from django.http import HttpResponse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+from rest_framework.response import Response
+
+# Model Imports
+from .models import InfantPatient, Psychologists, Questionnaire, UserProfile
+
+# Serializer Imports
+from .serializer import InfantPatientSerializer, PsychologistSerializer, QuestionnaireSerializer, UserProfileSerializer, UserSerializer
+
+# ReportLab Imports
 from reportlab.lib import colors
-from reportlab.lib.units import inch
-import os
-import random
-from django.conf import settings
-# Create your views here.
-from django.shortcuts import render, redirect
-from django.utils.crypto import get_random_string
-from django.urls import reverse
-from django.http import HttpResponse
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from reportlab.platypus import Table, TableStyle
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+# Python Standard Library Imports
+import os
+import random
 
 def enviar_correo(user):
     activation_key = get_random_string(40)
@@ -379,38 +374,42 @@ def validate_code(request):
         else:
             return Response("El código no corresponde al código enviado.", status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-def generar_reporte_pdf(request):
-    # Crear el objeto HttpResponse con el contenido del PDF
+def generar_reporte_pdf():
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="reporte.pdf"'
+    buffer = BytesIO()
+    # Crear el documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
 
-    # Crear un objeto canvas de ReportLab
-    c = canvas.Canvas(response, pagesize=A4)
-    width, height = A4
+    # Obtener el estilo para los párrafos
+    styles = getSampleStyleSheet()
+
+    # Contenido del PDF (secciones)
+    elements = []
 
     # Ruta del logo (asegúrate de colocar la ruta correcta)
     logo_path = os.path.join('crudautdetect/static/imgs/logoautdetect.png')
 
-    # Agregar el logo (en la esquina superior derecha)
-    c.drawImage(logo_path, width - 2 * inch, height - inch - 20, width=1.5 * inch, height=1.5 * inch)
-
-
-    c.setFont("Helvetica", 12)
-    c.drawString(50, height - 40, "AutDetect")
-    c.drawString(50, height - 60, "Contacto: autdetect@gmail.com")
-    # Título del reporte
-
-    # Añadir título
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(50, height - 100, "Reporte de detección temprana del Trastorno Espectro Autista")
-
-    # Añadir información de contacto
+    logo = Image(logo_path, 100, 100)
+    logo.hAlign = 'CENTER'  # Alineación centrada del logo
     
+    # Crear los encabezados de texto y centrar
+    header1 = Paragraph("AutDetect", styles['Normal'])
+    header2 = Paragraph("Contacto: autdetect@gmail.com", styles['Normal'])
+    
+    header1.hAlign = 'CENTER'  # Centrar texto
+    header2.hAlign = 'CENTER'  # Centrar texto
+    
+    # Añadir el logo centrado
+    elements.append(logo)
+    
+    # Añadir un espacio
+    
+    elements.append(Paragraph("Reporte de detección temprana del Trastorno Espectro Autista", styles['Title']))
 
-    # Subtítulo 1
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, height - 130, "1. Respuestas del cuestionario de comportamiento")
+    # Subtítulo
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("1. Respuestas del cuestionario de comportamiento", styles['Heading2']))
 
     # Preguntas
     questions = [
@@ -439,33 +438,77 @@ def generar_reporte_pdf(request):
         "23. ¿Tu hijo(a) puede jugar con niños que no conoce cuando está en el parque?",
         "24. ¿Tu hijo(a) se integra al grupo de niños cuando va a una fiesta infantil?",
     ]
-
-    y_position = height - 160
-    c.setFont("Helvetica", 10)
     for question in questions:
-        c.drawString(70, y_position, question)
-        y_position -= 20
+        elements.append(Spacer(1,5))
+        elements.append(Paragraph(question, styles['Normal']))
 
-    # Subtítulo 2
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(100, y_position - 20, "2. Resultados de la evaluación")
+    # Agregar un salto de página
+    elements.append(Spacer(1, 12))
 
+    # Subtítulo de la segunda sección
+    elements.append(Paragraph("2. Resultados de la evaluación", styles['Heading2']))
+    
+    elements.append(Spacer(1, 12))
     # Datos de la tabla
     table_data = [
         ["Nombre", "Apellido", "Fecha de nacimiento", "Fecha de evaluación", "Resultado", "Probabilidad"],
         ["Juan", "Pérez", "01/01/2010", "15/08/2024", "Positivo", "85%"],
-        ["Ana", "García", "05/05/2012", "15/08/2024", "Negativo", "10%"],
     ]
 
-    # Calcular las posiciones
-    table_y_position = y_position - 60
-    c.setFont("Helvetica-Bold", 12)
-    for i, row in enumerate(table_data):
-        for j, cell in enumerate(row):
-            c.drawString(100 + j * 90, table_y_position, cell)
-        table_y_position -= 20
+    # Crear la tabla
+    table = Table(table_data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.skyblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
 
-    c.showPage()
-    c.save()
+    # Añadir la tabla a los elementos
+    elements.append(table)
 
-    return response
+    # Construir el documento PDF con el contenido
+    doc.build(elements)
+
+    buffer.seek(0)
+    return buffer
+
+@api_view(['POST'])
+def send_email_report(request):
+    pdf_buffer = generar_reporte_pdf()
+    subject = "AutDetect - Reporte de Evaluación 📄"
+    html_message = f"""
+    <html>
+    <head></head>
+    <body>
+    <p>Hola, padre de familia</p>
+    <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF.</p>
+    <p>Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo.</p>
+    <p>Gracias por tu colaboración en la detección temprana del autismo.</p>
+    <p>Atentamente,<br>
+    <strong>AutDetect</strong><br>
+    [autdetect@gmail.com] ✉️</p>
+    </body>
+    </html>
+    """
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = ["uni.joaquin18@gmail.com"]
+
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=html_message,
+            from_email=from_email,
+            to=recipient_list,
+        )
+        email.attach('reporte_autdetect.pdf', pdf_buffer.getvalue(), 'application/pdf')
+
+        email.content_subtype = 'html'  # Importante para enviar HTML
+        email.send()
+        return Response(status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")

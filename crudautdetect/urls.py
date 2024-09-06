@@ -28,5 +28,5 @@ urlpatterns = [
     path('changepassword/', views.change_password, name='changepassword'),
     path('changepasswordemail/',views.change_password_email,name='changepasswordemail'),
     path('validatecode/',views.validate_code,name='validatecode'),
-    path('reporte/', views.generar_reporte_pdf, name='reporte_pdf'),
+    path('reporte/', views.send_email_report, name='reporte'),
 ]
