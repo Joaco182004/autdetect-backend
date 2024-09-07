@@ -479,14 +479,17 @@ def generar_reporte_pdf():
 
 @api_view(['POST'])
 def send_email_report(request):
+    name_father = request.data.get('name_father', '')
+    email_recipient = request.data.get('email', '')
+    patient_name = request.data.get('patient', '')
     pdf_buffer = generar_reporte_pdf()
     subject = "AutDetect - Reporte de Evaluación 📄"
     html_message = f"""
     <html>
     <head></head>
     <body>
-    <p>Hola, padre de familia</p>
-    <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF.</p>
+    <p>Hola, {name_father}</p>
+    <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF de su hijo {patient_name}.</p>
     <p>Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo.</p>
     <p>Gracias por tu colaboración en la detección temprana del autismo.</p>
     <p>Atentamente,<br>
@@ -496,7 +499,7 @@ def send_email_report(request):
     </html>
     """
     from_email = settings.DEFAULT_FROM_EMAIL
-    recipient_list = ["uni.joaquin18@gmail.com"]
+    recipient_list = [email_recipient]
 
     try:
         email = EmailMessage(
@@ -505,7 +508,7 @@ def send_email_report(request):
             from_email=from_email,
             to=recipient_list,
         )
-        email.attach('reporte_autdetect.pdf', pdf_buffer.getvalue(), 'application/pdf')
+        email.attach('reporte_autdetect_'+patient_name+'.pdf', pdf_buffer.getvalue(), 'application/pdf')
 
         email.content_subtype = 'html'  # Importante para enviar HTML
         email.send()
