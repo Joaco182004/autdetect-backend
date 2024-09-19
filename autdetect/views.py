@@ -10,6 +10,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone, crypto
 from django.utils.crypto import get_random_string
+from autdetect.ml_models.ml_model_loader import modelo_tea
+import numpy as np
 
 # Django REST Framework Imports
 from rest_framework import status, viewsets
@@ -515,3 +517,41 @@ def send_email_report(request):
         return Response(status=status.HTTP_200_OK)
     except Exception as e:
         print(f"Error al enviar correo: {e}")
+
+# Modelo ML
+@api_view(['GET'])
+def prediccion_view(request):
+    try:
+        # Obtener datos de entrada desde el cuerpo de la solicitud JSON
+        data = request.data
+
+        # Extraer las características del objeto JSON
+        pregunta_1 = int(data.get('pregunta_1'))
+        pregunta_2 = int(data.get('pregunta_2'))
+        pregunta_3 = int(data.get('pregunta_3'))
+        pregunta_4 = int(data.get('pregunta_4'))
+        pregunta_5 = int(data.get('pregunta_5'))
+        pregunta_6 = int(data.get('pregunta_6'))
+        pregunta_7 = int(data.get('pregunta_7'))
+        pregunta_8 = int(data.get('pregunta_8'))
+        pregunta_9 = int(data.get('pregunta_9'))
+        pregunta_10 = int(data.get('pregunta_10_Cociente_Espectro_Autista'))
+        sexo = int(data.get('Sexo'))
+        ictericia = int(data.get('Ictericia'))
+        familiar_con_tea = int(data.get('Familiar_con_TEA'))
+
+        # Crear el arreglo de entrada para el modelo
+        datos_de_entrada = np.array([[pregunta_1, pregunta_2, pregunta_3, pregunta_4, pregunta_5,
+                                      pregunta_6, pregunta_7, pregunta_8, pregunta_9, pregunta_10,
+                                      sexo, ictericia, familiar_con_tea]])
+
+        # Hacer predicción
+        prediccion = modelo_tea.predict(datos_de_entrada)[0]
+        probabilidad = modelo_tea.predict_proba(datos_de_entrada)[0][1]  # Probabilidad de la clase positiva
+
+        # Devolver la respuesta como JSON
+        return Response({'prediccion': int(prediccion), 'probabilidad': float(probabilidad)}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Manejar posibles errores
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

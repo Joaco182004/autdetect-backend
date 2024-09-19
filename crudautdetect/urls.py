@@ -29,4 +29,5 @@ urlpatterns = [
     path('changepasswordemail/',views.change_password_email,name='changepasswordemail'),
     path('validatecode/',views.validate_code,name='validatecode'),
     path('reporte/', views.send_email_report, name='reporte'),
+    path('model/',views.prediccion_view,name='model')
 ]
