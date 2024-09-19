@@ -519,7 +519,7 @@ def send_email_report(request):
         print(f"Error al enviar correo: {e}")
 
 # Modelo ML
-@api_view(['GET'])
+@api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def prediccion_view(request):
