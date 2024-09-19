@@ -520,6 +520,8 @@ def send_email_report(request):
 
 # Modelo ML
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def prediccion_view(request):
     try:
         # Obtener datos de entrada desde el cuerpo de la solicitud JSON
