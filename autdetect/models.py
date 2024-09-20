@@ -48,16 +48,30 @@ class InfantPatient(models.Model):
         verbose_name_plural = "Infant Patients"
 
 class Questionnaire(models.Model):
-    patient = models.OneToOneField(InfantPatient, on_delete=models.CASCADE, verbose_name="Infant Patient")
-    question_1 = models.BooleanField(verbose_name="Question 1")
-    question_2 = models.BooleanField(verbose_name="Question 2")
-    result = models.BooleanField(verbose_name="Autism Diagnosis")
-    probability = models.FloatField(verbose_name="Autism Probability")
-    date_evaluation = models.DateField(verbose_name="Date of Evaluation", blank=True)
+    patient = models.OneToOneField(
+        InfantPatient, 
+        on_delete=models.CASCADE, 
+        verbose_name="Infant Patient"
+    )
+    pregunta_1 = models.IntegerField(verbose_name="Pregunta 1",default=0)
+    pregunta_2 = models.IntegerField(verbose_name="Pregunta 2",default=0)
+    pregunta_3 = models.IntegerField(verbose_name="Pregunta 3",default=0)
+    pregunta_4 = models.IntegerField(verbose_name="Pregunta 4",default=0)
+    pregunta_5 = models.IntegerField(verbose_name="Pregunta 5",default=0)
+    pregunta_6 = models.IntegerField(verbose_name="Pregunta 6",default=0)
+    pregunta_7 = models.IntegerField(verbose_name="Pregunta 7",default=0)
+    pregunta_8 = models.IntegerField(verbose_name="Pregunta 8",default=0)
+    pregunta_9 = models.IntegerField(verbose_name="Pregunta 9",default=0)
+    pregunta_10 = models.IntegerField(verbose_name="Cociente Espectro Autista",default=0)
+    ictericia = models.IntegerField(verbose_name="Ictericia",default=0)
+    familiar_con_tea = models.IntegerField(verbose_name="Familiar con TEA",default=0)
+    result = models.BooleanField(verbose_name="Autism Diagnosis",default=0)
+    probability = models.FloatField(verbose_name="Autism Probability",default=0)
+    date_evaluation = models.DateField(verbose_name="Date of Evaluation", blank=True,default=0)
 
     def __str__(self):
         return f"Questionnaire for {self.patient.infant_name}"
 
     class Meta:
         verbose_name = "Questionnaire"
-        verbose_name_plural = "Questionnaire"
+        verbose_name_plural = "Questionnaires"

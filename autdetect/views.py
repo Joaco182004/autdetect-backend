@@ -376,7 +376,11 @@ def validate_code(request):
         else:
             return Response("El código no corresponde al código enviado.", status=status.HTTP_400_BAD_REQUEST)
 
-def generar_reporte_pdf():
+def transform_yes_no(value):
+    return "Sí" if value == 1 else "No"
+
+def generar_reporte_pdf(test):
+    patient = test.patient
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="reporte.pdf"'
     buffer = BytesIO()
@@ -415,34 +419,40 @@ def generar_reporte_pdf():
 
     # Preguntas
     questions = [
-        "1. Si señalas algo en la habitación, como un juguete o un animal, ¿tu hijo(a) lo mira?",
-        "2. ¿Alguna vez has pensado que tu hijo(a) podría ser sordo(a)?",
-        "3. ¿Tu hijo(a) juega a hacer cosas como beber de una taza de juguete, hablar por teléfono, o darle de comer a una muñeca o peluche?",
-        "4. ¿Hace tu hijo(a) movimientos extraños con los dedos cerca de sus ojos, o junta sus manos o pies de manera inusual?",
-        "5. ¿Tu hijo(a) señala con el dedo o la mano cuando quiere algo o necesita ayuda, como un juguete o comida que no puede alcanzar?",
-        "6. ¿Alguna vez tu hijo(a) señala algo solo para mostrarte, como un avión en el cielo o un animal?",
-        "7. ¿Tu hijo(a) muestra interés en otros niños, como mirarlos, sonreírles o tratar de jugar con ellos?",
-        "8. ¿Tu hijo(a) te muestra cosas para llamar tu atención, no porque necesite ayuda, sino solo para compartirlas contigo, como una flor o un juguete?",
-        "9. ¿Responde tu hijo(a) cuando lo(a) llamas por su nombre, como volteándose, hablándote o dejando de hacer lo que estaba haciendo?",
-        "10. ¿Cuando le sonríes a tu hijo(a), él o ella te sonríe de vuelta?",
-        "11. ¿Tu hijo(a) es sensible a ciertos ruidos, como la aspiradora, música alta, o el sonido de una moto?",
-        "12. ¿Te mira tu hijo(a) a los ojos cuando le hablas, juegas con él/ella, o lo(a) vistes?",
-        "13. ¿Usa tu hijo(a) gestos como decir adiós con la mano, aplaudir, o imitar algún sonido gracioso que haces?",
-        "14. Si te giras a ver algo, ¿tu hijo(a) trata de mirar hacia lo que estás mirando?",
-        "15. ¿Tu hijo(a) intenta que le prestes atención, por ejemplo, diciendo “mira” o 'mírame'?",
-        "16. ¿Entiende tu hijo(a) lo que le dices que haga, como “pon el libro en la silla” o “tráeme la manta” sin necesidad de gestos?",
-        "17. ¿A tu hijo(a) le cuesta cambiar de rutina, como cambiar de horario en la escuela, salir de vacaciones, o tomar un camino diferente?",
-        "18. ¿Tu hijo(a) tiene dificultades para aceptar diferentes texturas o colores de alimentos?",
-        "19. ¿Tu hijo(a) tiene un interés exagerado por un tipo específico de dibujo, juego o tema?",
-        "20. ¿Tu hijo(a) repite casi siempre la última palabra que escucha de una frase dicha por otra persona?",
-        "21. ¿Tu hijo(a) te jala de la mano para que hagas cosas por él/ella, como abrir una puerta, coger un objeto, o jugar?",
-        "22. Si personas desconocidas saludan a tu hijo(a), ¿él/ella las mira o responde al saludo?",
-        "23. ¿Tu hijo(a) puede jugar con niños que no conoce cuando está en el parque?",
-        "24. ¿Tu hijo(a) se integra al grupo de niños cuando va a una fiesta infantil?",
+        "1. ¿Responde tu hijo(a) cuando lo(a) llamas por su nombre, como volteándose, hablándote o dejando de hacer lo que estaba haciendo?",
+        "2. ¿Te mira tu hijo(a) a los ojos cuando le hablas, juegas con él/ella, o lo(a) vistes?",
+        "3. ¿Tu hijo(a) señala con el dedo o la mano cuando quiere algo o necesita ayuda, como un juguete o comida que no puede alcanzar?",
+        "4. ¿Alguna vez tu hijo(a) señala algo que le causa interés solo para mostrarte, como un avión en el cielo o un animal?",
+        "5. ¿Tu hijo(a) juega a hacer cosas como beber de una taza de juguete, hablar por teléfono, o darle de comer a una muñeca o peluche?",
+        "6. Si te giras a ver algo, ¿tu hijo(a) trata de mirar hacia lo que estás mirando?",
+        "7. Si tú o alguien más en la familia está visiblemente triste o molesto, ¿tu hijo muestra signos de querer consolarlo?",
+        "8. ¿Tu hijo dijo sus primeras palabras (como 'mamá' o 'papá') alrededor del primer año de vida?",
+        "9. ¿Usa tu hijo(a) gestos como decir adiós con la mano, aplaudir, o imitar algún sonido gracioso que haces?",
+        "10. ¿Ha notado que su hijo se queda mirando un objeto o al vacío durante un tiempo prolongado, sin parecer darse cuenta de lo que ocurre a su alrededor?",
+        "11. ¿Tu hijo ha presentado alguna vez ictericia, es decir, un tono amarillento en la piel o en los ojos, especialmente poco después de nacer?",
+        "12. ¿Hay algún familiar en tu familia que haya sido diagnosticado con Trastorno del Espectro Autista (TEA)?"
     ]
-    for question in questions:
-        elements.append(Spacer(1,5))
-        elements.append(Paragraph(question, styles['Normal']))
+
+    answers = [
+        transform_yes_no(1 if test.pregunta_1 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_2 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_3 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_4 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_5 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_6 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_7 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_8 == 0 else 0),
+        transform_yes_no(1 if test.pregunta_9 == 0 else 0),
+        transform_yes_no(test.pregunta_10),  # Cociente Espectro Autista
+        transform_yes_no(test.ictericia),
+        transform_yes_no(test.familiar_con_tea)
+    ]
+    
+    for question, answer in zip(questions, answers):
+        elements.append(Spacer(1, 5))  # Espacio entre elementos
+        elements.append(Paragraph(question, styles['Normal']))  # Agregar la pregunta
+        elements.append(Spacer(1, 2)) 
+        elements.append(Paragraph(f"<b>Respuesta:</b> {answer}", styles['Normal']))
 
     # Agregar un salto de página
     elements.append(Spacer(1, 12))
@@ -453,8 +463,8 @@ def generar_reporte_pdf():
     elements.append(Spacer(1, 12))
     # Datos de la tabla
     table_data = [
-        ["Nombre", "Apellido", "Fecha de nacimiento", "Fecha de evaluación", "Resultado", "Probabilidad"],
-        ["Juan", "Pérez", "01/01/2010", "15/08/2024", "Positivo", "85%"],
+        ["DNI","Nombre", "Fecha de nacimiento", "Fecha de evaluación", "Resultado", "Probabilidad"],
+        [patient.infant_dni,patient.infant_name, patient.birth_date, test.date_evaluation, "Positivo" if test.result == 1 else "Negativo", int(test.probability * 100) / 100.0],
     ]
 
     # Crear la tabla
@@ -481,42 +491,47 @@ def generar_reporte_pdf():
 
 @api_view(['POST'])
 def send_email_report(request):
-    name_father = request.data.get('name_father', '')
-    email_recipient = request.data.get('email', '')
-    patient_name = request.data.get('patient', '')
-    pdf_buffer = generar_reporte_pdf()
-    subject = "AutDetect - Reporte de Evaluación 📄"
-    html_message = f"""
-    <html>
-    <head></head>
-    <body>
-    <p>Hola, {name_father}</p>
-    <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF de su hijo {patient_name}.</p>
-    <p>Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo.</p>
-    <p>Gracias por tu colaboración en la detección temprana del autismo.</p>
-    <p>Atentamente,<br>
-    <strong>AutDetect</strong><br>
-    [autdetect@gmail.com] ✉️</p>
-    </body>
-    </html>
-    """
-    from_email = settings.DEFAULT_FROM_EMAIL
-    recipient_list = [email_recipient]
-
+    id_test = request.data.get('id_test', '')
     try:
-        email = EmailMessage(
-            subject=subject,
-            body=html_message,
-            from_email=from_email,
-            to=recipient_list,
-        )
-        email.attach('reporte_autdetect_'+patient_name+'.pdf', pdf_buffer.getvalue(), 'application/pdf')
+        questionnaire = Questionnaire.objects.get(id=id_test)
+        patient = questionnaire.patient
+        pdf_buffer = generar_reporte_pdf(questionnaire)
+        subject = "AutDetect - Reporte de Evaluación 📄"
+        html_message = f"""
+        <html>
+        <head></head>
+        <body>
+        <p>Hola, {patient.guardian_name}</p>
+        <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF de su hijo {patient.infant_name}.</p>
+        <p>Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo.</p>
+        <p>Gracias por tu colaboración en la detección temprana del autismo.</p>
+        <p>Atentamente,<br>
+        <strong>AutDetect</strong><br>
+        [autdetect@gmail.com] ✉️</p>
+        </body>
+        </html>
+        """
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [patient.guardian_email]
 
-        email.content_subtype = 'html'  # Importante para enviar HTML
-        email.send()
-        return Response(status=status.HTTP_200_OK)
-    except Exception as e:
-        print(f"Error al enviar correo: {e}")
+        try:
+            email = EmailMessage(
+                subject=subject,
+                body=html_message,
+                from_email=from_email,
+                to=recipient_list,
+            )
+            email.attach('reporte_autdetect_'+patient.infant_name+'.pdf', pdf_buffer.getvalue(), 'application/pdf')
+
+            email.content_subtype = 'html'  # Importante para enviar HTML
+            email.send()
+            return Response(status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"Error al enviar correo: {e}")
+    except Questionnaire.DoesNotExist:
+        # Manejo si no existe el cuestionario
+        return None
+    
 
 # Modelo ML
 @api_view(['POST'])
