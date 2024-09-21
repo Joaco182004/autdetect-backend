@@ -48,7 +48,7 @@ class InfantPatient(models.Model):
         verbose_name_plural = "Infant Patients"
 
 class Questionnaire(models.Model):
-    patient = models.OneToOneField(
+    patient = models.ForeignKey(
         InfantPatient, 
         on_delete=models.CASCADE, 
         verbose_name="Infant Patient"
