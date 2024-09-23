@@ -12,6 +12,9 @@ from django.utils import timezone, crypto
 from django.utils.crypto import get_random_string
 from autdetect.ml_models.ml_model_loader import modelo_tea
 import numpy as np
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
 
 # Django REST Framework Imports
 from rest_framework import status, viewsets
@@ -425,11 +428,11 @@ def generar_reporte_pdf(test):
         "4. ¿Alguna vez tu hijo(a) señala algo que le causa interés solo para mostrarte, como un avión en el cielo o un animal?",
         "5. ¿Tu hijo(a) juega a hacer cosas como beber de una taza de juguete, hablar por teléfono, o darle de comer a una muñeca o peluche?",
         "6. Si te giras a ver algo, ¿tu hijo(a) trata de mirar hacia lo que estás mirando?",
-        "7. Si tú o alguien más en la familia está visiblemente triste o molesto, ¿tu hijo muestra signos de querer consolarlo?",
-        "8. ¿Tu hijo dijo sus primeras palabras (como 'mamá' o 'papá') alrededor del primer año de vida?",
+        "7. Si tú o alguien más en la familia está visiblemente triste o molesto, ¿tu hijo(a) muestra signos de querer consolarlo?",
+        "8. ¿Tu hijo(a) dijo sus primeras palabras (como 'mamá' o 'papá') alrededor del primer año de vida?",
         "9. ¿Usa tu hijo(a) gestos como decir adiós con la mano, aplaudir, o imitar algún sonido gracioso que haces?",
-        "10. ¿Ha notado que su hijo se queda mirando un objeto o al vacío durante un tiempo prolongado, sin parecer darse cuenta de lo que ocurre a su alrededor?",
-        "11. ¿Tu hijo ha presentado alguna vez ictericia, es decir, un tono amarillento en la piel o en los ojos, especialmente poco después de nacer?",
+        "10. ¿Ha notado que su hijo(a) se queda mirando un objeto o al vacío durante un tiempo prolongado, sin parecer darse cuenta de lo que ocurre a su alrededor?",
+        "11. ¿Tu hijo(a) ha presentado alguna vez ictericia, es decir, un tono amarillento en la piel o en los ojos, especialmente poco después de nacer?",
         "12. ¿Hay algún familiar en tu familia que haya sido diagnosticado con Trastorno del Espectro Autista (TEA)?"
     ]
 
@@ -464,7 +467,7 @@ def generar_reporte_pdf(test):
     # Datos de la tabla
     table_data = [
         ["DNI","Nombre", "Fecha de nacimiento", "Fecha de evaluación", "Resultado", "Probabilidad"],
-        [patient.infant_dni,patient.infant_name, patient.birth_date, test.date_evaluation, "Positivo" if test.result == 1 else "Negativo", int(test.probability * 100) / 100.0],
+        [patient.infant_dni,patient.infant_name, patient.birth_date, test.date_evaluation, "Positivo" if test.result == 1 else "Negativo", str((int(test.probability * 100) / 100.0) * 100) + "%"],
     ]
 
     # Crear la tabla
@@ -502,7 +505,7 @@ def send_email_report(request):
         <head></head>
         <body>
         <p>Hola, {patient.guardian_name}</p>
-        <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF de su hijo {patient.infant_name}.</p>
+        <p>Adjunto encontrarás el reporte de evaluación de AutDetect en formato PDF de su hijo(a) {patient.infant_name}.</p>
         <p>Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo.</p>
         <p>Gracias por tu colaboración en la detección temprana del autismo.</p>
         <p>Atentamente,<br>
@@ -572,3 +575,129 @@ def prediccion_view(request):
     except Exception as e:
         # Manejar posibles errores
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+#Reportes
+def ajustar_ancho_columna(ws):
+    for column_cells in ws.columns:
+        max_length = 0
+        column = column_cells[0].column_letter  # Obtener la letra de la columna
+        for cell in column_cells:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = max_length + 2  # Ajustar un poco más el ancho
+        ws.column_dimensions[column].width = adjusted_width
+
+def aplicar_estilo_encabezado(ws):
+    # Definir los estilos
+    font = Font(bold=True, color="FFFFFF")  # Negrita y texto blanco
+    fill = PatternFill(start_color="87CEEB", end_color="87CEEB", fill_type="solid")  # Fondo azul cielo
+    center_alignment = Alignment(horizontal="center", vertical="center")
+    for cell in ws[1]:  # La primera fila es el encabezado
+        cell.font = font
+        cell.fill = fill
+        cell.alignment = center_alignment
+
+def aplicar_bordes(ws):
+    # Definir los bordes
+    thin_border = Border(left=Side(style='thin'),
+                         right=Side(style='thin'),
+                         top=Side(style='thin'),
+                         bottom=Side(style='thin'))
+    center_alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Aplicar los bordes a todas las celdas con texto
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.value:  # Aplicar borde solo si la celda tiene valor
+                cell.border = thin_border
+                cell.alignment=center_alignment
+
+# Vista para exportar los datos de InfantPatient
+def export_infant_patients_excel(request):
+    # Crear el archivo Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Infant Patients'
+
+    # Escribir los encabezados
+    ws.append(['DNI del Paciente', 'Nombre del Paciente', 'Fecha de Nacimiento', 'Género', 'DNI del Tutor', 'Nombre del Tutor', 'Correo del Tutor', 'Teléfono de Contacto', 'Distrito', 'Psicólogo'])
+
+    aplicar_estilo_encabezado(ws)
+    # Obtener los datos
+    patients = InfantPatient.objects.all()
+
+    # Escribir los datos
+    for patient in patients:
+        ws.append([
+            patient.infant_dni,
+            patient.infant_name,
+            patient.birth_date,
+            patient.get_gender_display(),
+            patient.guardian_dni,
+            patient.guardian_name,
+            patient.guardian_email,
+            patient.contact_phone,
+            patient.district,
+            patient.psychology.full_name,  # Asumiendo que 'Psychologists' tiene un campo 'name'
+        ])
+
+    ajustar_ancho_columna(ws)
+    aplicar_bordes(ws)
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=infant_patients.xlsx'
+    
+    # Guardar el archivo en la respuesta
+    wb.save(response)
+    return response
+
+
+# Vista para exportar los datos de Questionnaire
+def export_questionnaires_excel(request):
+    # Crear el archivo Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Questionnaires'
+
+    # Escribir los encabezados
+    ws.append(['DNI del paciente','Nombre del Paciente', 'Psicólogo', 'Pregunta 1', 'Pregunta 2', 'Pregunta 3', 'Pregunta 4', 'Pregunta 5', 'Pregunta 6', 'Pregunta 7', 'Pregunta 8', 'Pregunta 9', 'Pregunta 10 Cociente Espectro Autista', 'Ictericia', 'Familiar con TEA', 'Resultado', 'Probabilidad', 'Fecha de Evaluación'])
+
+    aplicar_estilo_encabezado(ws)
+    # Obtener los datos
+    questionnaires = Questionnaire.objects.all()
+
+    # Escribir los datos
+    for q in questionnaires:
+        ws.append([
+        q.patient.infant_dni,
+        q.patient.infant_name,
+        q.patient.psychology.full_name,
+        str(q.pregunta_1),  # Asegúrate de que se traten como texto
+        str(q.pregunta_2),
+        str(q.pregunta_3),
+        str(q.pregunta_4),
+        str(q.pregunta_5),
+        str(q.pregunta_6),
+        str(q.pregunta_7),
+        str(q.pregunta_8),
+        str(q.pregunta_9),
+        str(q.pregunta_10),
+        str(q.ictericia),
+        str(q.familiar_con_tea),
+        'Sí' if q.result else 'No',
+        str((int(q.probability * 100) / 100.0) * 100) + "%",
+        q.date_evaluation,
+    ])
+
+    ajustar_ancho_columna(ws)
+    aplicar_bordes(ws)
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=questionnaires.xlsx'
+    
+    # Guardar el archivo en la respuesta
+    wb.save(response)
+    return response

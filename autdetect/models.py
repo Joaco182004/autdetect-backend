@@ -27,8 +27,8 @@ class Psychologists(models.Model):
 
 class InfantPatient(models.Model):
     GENDER_CHOICES = [
-        ('M', 'Male'),
-        ('F', 'Female'),
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
     ]
     infant_dni = models.CharField(max_length=8, verbose_name="Infant DNI")
     infant_name = models.CharField(max_length=100, verbose_name="Infant's Full Name")
