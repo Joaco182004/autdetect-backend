@@ -616,6 +616,9 @@ def aplicar_bordes(ws):
                 cell.alignment=center_alignment
 
 # Vista para exportar los datos de InfantPatient
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def export_infant_patients_excel(request):
     # Crear el archivo Excel
     wb = openpyxl.Workbook()
@@ -656,6 +659,9 @@ def export_infant_patients_excel(request):
 
 
 # Vista para exportar los datos de Questionnaire
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def export_questionnaires_excel(request):
     # Crear el archivo Excel
     wb = openpyxl.Workbook()
