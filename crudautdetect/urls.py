@@ -32,4 +32,5 @@ urlpatterns = [
     path('model/',views.prediccion_view,name='model'),
     path('export-infant-patients/', views.export_infant_patients_excel, name='export_infant_patients_excel'),
     path('export-questionnaires/', views.export_questionnaires_excel, name='export_questionnaires_excel'),
+    path('export-evaluation/', views.export_report_evaluation, name='export_report_evaluation'),
 ]

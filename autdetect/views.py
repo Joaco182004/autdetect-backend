@@ -707,3 +707,22 @@ def export_questionnaires_excel(request):
     # Guardar el archivo en la respuesta
     wb.save(response)
     return response
+
+# Exportar en un pdf el reporte
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def export_report_evaluation(request):
+    print(request.data)
+    id_test = request.data.get('id_test', '')
+    try:
+        questionnaire = Questionnaire.objects.get(id=id_test)
+        patient = questionnaire.patient
+        pdf_buffer = generar_reporte_pdf(questionnaire)
+        response = HttpResponse(pdf_buffer.getvalue(),content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="reporte_autdetect_'+patient.infant_name+'.pdf"'
+        return response
+    except Questionnaire.DoesNotExist:
+        # Manejo si no existe el cuestionario
+        return None
