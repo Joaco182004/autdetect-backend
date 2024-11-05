@@ -90,10 +90,8 @@ def activate_account(request, activation_key):
     activation_key = activation_key.rstrip('/')
     try:
         profile = UserProfile.objects.get(activation_key=activation_key)
-        print(activation_key)
-        if profile.key_expires < timezone.now():
-            print(profile.key_expires)
-            print(timezone.now())
+        key_expires_aware = timezone.make_aware(profile.key_expires)
+        if key_expires_aware < timezone.now():
             return HttpResponse('El enlace ha expirado.', status=400)
         user = profile.user
         user.is_active = True
