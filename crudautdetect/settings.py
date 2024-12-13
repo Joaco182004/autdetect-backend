@@ -80,18 +80,23 @@ WSGI_APPLICATION = 'crudautdetect.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'Autdetect',
+#         'USER': 'postgres',
+#         'PASSWORD': 'Universo200418$',
+#         'HOST': 'database-1.c7uk4c220gu4.us-east-2.rds.amazonaws.com',  # El endpoint de RDS proporcionado por Amazon
+#         'PORT': '5432',                # Puerto predeterminado para PostgreSQL
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Autdetect',
-        'USER': 'postgres',
-        'PASSWORD': 'Universo200418$',
-        'HOST': 'database-1.c7uk4c220gu4.us-east-2.rds.amazonaws.com',  # El endpoint de RDS proporcionado por Amazon
-        'PORT': '5432',                # Puerto predeterminado para PostgreSQL
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',  # El archivo SQLite se guardará en la raíz de tu proyecto
     }
 }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
