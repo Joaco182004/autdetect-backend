@@ -1,4 +1,6 @@
 # Django Imports
+
+from django.http import JsonResponse
 from io import BytesIO
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -189,15 +191,19 @@ class UserProfileView(viewsets.ModelViewSet):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def patients_by_month(request):
+    year = request.query_params.get('year')
+    if not year:
+        return Response({"error": "El parámetro 'year' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+    
     monthly_data = (
         Questionnaire.objects
+        .filter(date_evaluation__year=year)
         .annotate(
-            year=ExtractYear('date_evaluation'),
             month=ExtractMonth('date_evaluation')
         )
-        .values('year', 'month','patient__psychology')
+        .values('month', 'patient__psychology')
         .annotate(total=Count('id'))
-        .order_by('year', 'month','patient__psychology')
+        .order_by('month', 'patient__psychology')
     )
     return Response(monthly_data)
 
@@ -206,8 +212,10 @@ def patients_by_month(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def patients_by_month_autism(request):
+    year = request.query_params.get('year')
     monthly_data = (
         Questionnaire.objects
+        .filter(date_evaluation__year=year)
         .annotate(
             year=ExtractYear('date_evaluation'),  
             month=ExtractMonth('date_evaluation')
@@ -233,6 +241,14 @@ def patients_by_gender(request):
     )
     
     return Response(gender_data)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_evaluation_years(request):
+    evaluation_years = Questionnaire.objects.dates('date_evaluation', 'year', order='DESC')
+    years = [year.year for year in evaluation_years]
+    return JsonResponse({'years': years})
 
 def change_email(user,email_change):
     user_profile = UserProfile.objects.filter(user=user).first()
