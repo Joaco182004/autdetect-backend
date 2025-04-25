@@ -45,6 +45,7 @@ import os
 import random
 
 def enviar_correo(user):
+    print(user)
     activation_key = get_random_string(40)
     user_profile = UserProfile.objects.create(user=user, activation_key=activation_key)
     
@@ -154,7 +155,6 @@ def register(request):
 
     if psychologist_serializer.is_valid():
         psychologist_serializer.save()
-        print(psychologist_data)
         enviar_correo(user)  # Enviar correo con el enlace de verificación
         return Response({
             'token': token.key,
@@ -384,9 +384,7 @@ def validate_code(request):
     existing_user = User.objects.filter(username=username).first()
 
     if existing_user:
-        print(existing_user)
         user_profile = UserProfile.objects.filter(user=existing_user).first()
-        print(user_profile)
         if(user_profile.code_change == code):
             return Response({"success": True}, status=status.HTTP_200_OK)
         else:
@@ -727,7 +725,6 @@ def export_questionnaires_excel(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def export_report_evaluation(request):
-    print(request.data)
     id_test = request.data.get('id_test', '')
     try:
         questionnaire = Questionnaire.objects.get(id=id_test)
