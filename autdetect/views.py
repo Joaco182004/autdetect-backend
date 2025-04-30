@@ -630,7 +630,7 @@ def aplicar_bordes(ws):
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def export_infant_patients_excel(request):
+def export_infant_patients_excel(request,id_psychology):
     # Crear el archivo Excel
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -645,18 +645,19 @@ def export_infant_patients_excel(request):
 
     # Escribir los datos
     for patient in patients:
-        ws.append([
-            patient.infant_dni,
-            patient.infant_name,
-            patient.birth_date,
-            patient.get_gender_display(),
-            patient.guardian_dni,
-            patient.guardian_name,
-            patient.guardian_email,
-            patient.contact_phone,
-            patient.district,
-            patient.psychology.full_name,  # Asumiendo que 'Psychologists' tiene un campo 'name'
-        ])
+        if patient.psychology.id == id_psychology:
+            ws.append([
+                patient.infant_dni,
+                patient.infant_name,
+                patient.birth_date,
+                patient.get_gender_display(),
+                patient.guardian_dni,
+                patient.guardian_name,
+                patient.guardian_email,
+                patient.contact_phone,
+                patient.district,
+                patient.psychology.full_name,  # Asumiendo que 'Psychologists' tiene un campo 'name'
+            ])
 
     ajustar_ancho_columna(ws)
     aplicar_bordes(ws)
@@ -673,7 +674,7 @@ def export_infant_patients_excel(request):
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def export_questionnaires_excel(request):
+def export_questionnaires_excel(request,id_psychology):
     # Crear el archivo Excel
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -688,26 +689,27 @@ def export_questionnaires_excel(request):
 
     # Escribir los datos
     for q in questionnaires:
-        ws.append([
-        q.patient.infant_dni,
-        q.patient.infant_name,
-        q.patient.psychology.full_name,
-        str(q.pregunta_1),  # Asegúrate de que se traten como texto
-        str(q.pregunta_2),
-        str(q.pregunta_3),
-        str(q.pregunta_4),
-        str(q.pregunta_5),
-        str(q.pregunta_6),
-        str(q.pregunta_7),
-        str(q.pregunta_8),
-        str(q.pregunta_9),
-        str(q.pregunta_10),
-        str(q.ictericia),
-        str(q.familiar_con_tea),
-        'Sí' if q.result else 'No',
-        str((int(q.probability * 100) / 100.0) * 100) + "%",
-        q.date_evaluation,
-    ])
+        if q.patient.psychology.id == id_psychology:
+            ws.append([
+            q.patient.infant_dni,
+            q.patient.infant_name,
+            q.patient.psychology.full_name,
+            str(q.pregunta_1),  # Asegúrate de que se traten como texto
+            str(q.pregunta_2),
+            str(q.pregunta_3),
+            str(q.pregunta_4),
+            str(q.pregunta_5),
+            str(q.pregunta_6),
+            str(q.pregunta_7),
+            str(q.pregunta_8),
+            str(q.pregunta_9),
+            str(q.pregunta_10),
+            str(q.ictericia),
+            str(q.familiar_con_tea),
+            'Sí' if q.result else 'No',
+            str((int(q.probability * 100) / 100.0) * 100) + "%",
+            q.date_evaluation,
+            ])
 
     ajustar_ancho_columna(ws)
     aplicar_bordes(ws)

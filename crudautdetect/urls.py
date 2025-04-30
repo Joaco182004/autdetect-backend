@@ -30,8 +30,8 @@ urlpatterns = [
     path('validatecode/',views.validate_code,name='validatecode'),
     path('reporte/', views.send_email_report, name='reporte'),
     path('model/',views.prediccion_view,name='model'),
-    path('export-infant-patients/', views.export_infant_patients_excel, name='export_infant_patients_excel'),
-    path('export-questionnaires/', views.export_questionnaires_excel, name='export_questionnaires_excel'),
+    path('export-infant-patients/<int:id_psychology>/', views.export_infant_patients_excel, name='export_infant_patients_excel'),
+    path('export-questionnaires/<int:id_psychology>/', views.export_questionnaires_excel, name='export_questionnaires_excel'),
     path('export-evaluation/', views.export_report_evaluation, name='export_report_evaluation'),
     path('evaluation-years/', views.get_evaluation_years, name='get_evaluation_years'),
 ]
