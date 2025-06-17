@@ -118,21 +118,34 @@ def login(request):
 
 @api_view(['POST'])
 def register(request):
+    array_errors= []
+    print(request.data)
     username = request.data.get('email', '')
     # Buscar el usuario existente
-    existing_user = User.objects.filter(username=username).first()
+    existing_user_email = User.objects.filter(username=username).first()
+    existing_user_dni = Psychologists.objects.filter(dni=request.data.get('dni', '')).first()
+    existing_user_tuition_number = Psychologists.objects.filter(tuition_number=request.data.get('tuition_number', '')).first()
 
-    if existing_user:
-        if existing_user.is_active == False:
-        # Si el usuario existe, eli inar usuario y psicólogo asociados
-            Token.objects.filter(user=existing_user).delete()  # Eliminar el token existente
-            Psychologists.objects.filter(user=existing_user).delete()  # Eliminar el psicólogo existente
-            existing_user.delete() # Eliminar el usuario existente
+
+    if existing_user_email:
+        if existing_user_email.is_active == False:
+            Token.objects.filter(user=existing_user_email).delete()
+            Psychologists.objects.filter(user=existing_user_email).delete()
+            existing_user_email.delete()
+        else:
+            array_errors.append("El correo electrónico ya se encuentra registrado en el sistema.")
+    if existing_user_dni:
+        array_errors.append("El número de DNI ya se encuentra registrado en el sistema.")
+    if existing_user_tuition_number:
+        array_errors.append("El número de colegiatura ya se encuentra registrado en el sistema.")
+
+    if array_errors:
+        return Response({"errors": array_errors}, status=status.HTTP_400_BAD_REQUEST)
 
     # Crear un nuevo usuario
     user_serializer = UserSerializer(data=request.data)
     if user_serializer.is_valid():
-        user = user_serializer.save()
+        user = user_serializer.save()   
         user.set_password(request.data.get('password', ''))
         user.is_active = False  # Desactivar la cuenta hasta la verificación
         user.save()
