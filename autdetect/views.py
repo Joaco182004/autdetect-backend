@@ -104,12 +104,17 @@ def activate_account(request, activation_key):
 
 @api_view(['POST'])
 def login(request):
-    user = get_object_or_404(User, username=request.data['username'])
+    username = request.data.get('username', '')
+    password = request.data.get('password', '')
 
+    user = User.objects.filter(username=username).first()
+    print(user)
+    if not user:
+        return Response({"error": "El usuario no está registrado."}, status=status.HTTP_400_BAD_REQUEST)
     if not user.is_active:
-        return Response({"error": "El usuario no esta activo."}, status=status.HTTP_403_FORBIDDEN)
-    if not user.check_password(request.data['password']):
-        return Response({"error": "La contraseña es inválida."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "El usuario no está activo."}, status=status.HTTP_400_BAD_REQUEST)
+    if not user.check_password(password):
+        return Response({"error": "El correo o contraseña no son correctos."}, status=status.HTTP_400_BAD_REQUEST)
 
     token, created = Token.objects.get_or_create(user=user)
     serializer = UserSerializer(instance=user)
