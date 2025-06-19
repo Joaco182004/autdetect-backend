@@ -133,11 +133,11 @@ def register(request):
             Psychologists.objects.filter(user=existing_user_email).delete()
             existing_user_email.delete()
         else:
-            array_errors.append("El correo electrónico ya se encuentra registrado en el sistema.")
+            array_errors.append("El correo electrónico ya se encuentra registrado en el sistema")
     if existing_user_dni:
-        array_errors.append("El número de DNI ya se encuentra registrado en el sistema.")
+        array_errors.append("El número de DNI ya se encuentra registrado en el sistema")
     if existing_user_tuition_number:
-        array_errors.append("El número de colegiatura ya se encuentra registrado en el sistema.")
+        array_errors.append("El número de colegiatura ya se encuentra registrado en el sistema")
 
     if array_errors:
         return Response({"errors": array_errors}, status=status.HTTP_400_BAD_REQUEST)
