@@ -270,7 +270,10 @@ def get_evaluation_years(request):
 
 def change_email(user,email_change):
     user_profile = UserProfile.objects.filter(user=user).first()
-
+    # Validar si el nuevo correo ya está registrado en el sistema
+    if User.objects.filter(username=email_change).exists() or Psychologists.objects.filter(email=email_change).exists():
+        raise Exception("El correo electrónico ya se encuentra registrado en el sistema")
+    
     verification_code = random.randint(100000, 999999)
 
     if user_profile:
