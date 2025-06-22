@@ -362,7 +362,7 @@ def change_password_email(request):
         user_profile.code_change = verification_code
         user_profile.save()
     else:
-        return Response("El correo ingresado no se encuentra registrado.", status=status.HTTP_400_BAD_REQUEST)
+        return Response("El correo ingresado no se encuentra registrado o válido.", status=status.HTTP_400_BAD_REQUEST)
     
     subject = "AutDetect - Cambio de Contraseña 🔑"
     html_message = f"""
